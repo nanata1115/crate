@@ -79,6 +79,10 @@ Changes
 - Added the :ref:`MAX_BY <aggregation-max_by>` and :ref:`MIN_BY
   <aggregation-min_by>` aggregation functions
 
+- Added a :ref:`WITH clause <sql-copy-from-with>` option :ref:`SKIP
+  <sql-copy-from-skip>` for :ref:`COPY FROM <sql-copy-from>` which allows
+  skipping rows from the beginning while copying data.
+
 
 Fixes
 =====

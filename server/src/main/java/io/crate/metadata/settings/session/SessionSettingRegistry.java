@@ -67,7 +67,7 @@ public class SessionSettingRegistry {
                      objects -> {}, // everything allowed, empty list (resulting by ``SET .. TO DEFAULT`` results in defaults
                      objects -> createSearchPathFrom(objectsToStringArray(objects)),
                      CoordinatorSessionSettings::setSearchPath,
-                     s -> String.join(", ", s.searchPath()),
+                     s -> String.join(", ", s.searchPath().showPath()),
                      () -> String.join(", ", SearchPath.pathWithPGCatalogAndDoc()),
                      "Sets the schema search order.",
                      DataTypes.STRING))

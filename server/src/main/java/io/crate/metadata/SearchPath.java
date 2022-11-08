@@ -94,19 +94,22 @@ public final class SearchPath implements Iterable<String>, Writeable {
         }
     }
 
+    /**
+     * Path to show in `SHOW search_path`
+     *
+     * @return the search path excluding pg_catalog unless it was set explicitly
+     */
+    public Iterable<String> showPath() {
+        if (pgCatalogIsSetExplicitly) {
+            return searchPath;
+        } else {
+            return searchPath.subList(1, searchPath.size());
+        }
+    }
+
     @Override
     public Iterator<String> iterator() {
         return searchPath.iterator();
-    }
-
-    @Override
-    public void forEach(Consumer<? super String> action) {
-        searchPath.forEach(action);
-    }
-
-    @Override
-    public Spliterator<String> spliterator() {
-        return searchPath.spliterator();
     }
 
     @Override

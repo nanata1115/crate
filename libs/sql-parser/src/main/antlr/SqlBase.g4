@@ -380,6 +380,7 @@ escapedCharsStringLiteral
 
 stringLiteral
     : STRING
+    | DOLLAR_QUOTED_STRING
     ;
 
 bitString
@@ -1101,6 +1102,9 @@ BIT_STRING
     : 'B' '\'' ([0-1])* '\''
     ;
 
+DOLLAR_QUOTED_STRING
+    : '$' IDENTIFIER? '$' (.)* '$' IDENTIFIER? '$'
+    ;
 
 INTEGER_VALUE
     : DIGIT+

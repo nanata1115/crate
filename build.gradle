@@ -34,6 +34,7 @@ buildscript {
 
 plugins {
     id 'com.github.jk1.dependency-license-report' version '2.1'
+    id "nebula.ospackage" version "9.1.0"
 }
 
 def download(File downloadDir, String url, String name) {
@@ -306,6 +307,30 @@ task generateLicenseNotes() {
 
     dependsOn "createReport"
 }
+
+task buildCrateRpm(type: Rpm) {
+    packageName = 'crate'
+    version = '5.2.0'
+    release = 'nanata'
+    packageDescription = ''
+    arch = X86_64
+    os = LINUX
+
+    /*
+    preInstall file('scripts/preInstall.sh')
+
+    requires('epel-release')
+    */
+    String tarFile = './app/build-idea/distributions/'+packageName+'-'+version+'.tar.gz'
+    FileTree rpm_files = tarTree(tarFile)
+
+    from(rpm_files) {
+        into '/usr/local/'
+    }
+
+    link('/bin/java', '/usr/local/jre1.8.0_111/bin/java')
+}
+println relativePath(buildCrateRpm.archivePath)
 
 wrapper {
     gradleVersion = '7.4.1'

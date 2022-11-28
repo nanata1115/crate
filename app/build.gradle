@@ -250,7 +250,7 @@ jar {
         // Needed by ES which validates those manifest attributes in Build class
         manifest.attributes 'Build-Date': project(':server').getVersion.buildDate
         manifest.attributes 'Change': project(':server').getVersion.buildShortHash
-        project.version = project(':server').getVersion.version
+        project.version = project(':server').getVersion.shortVersion
         def serviceDir = file("$buildDir/META-INF/services")
         serviceDir.deleteDir()
         serviceDir.mkdirs()

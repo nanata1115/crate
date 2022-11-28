@@ -141,11 +141,9 @@ import org.elasticsearch.index.engine.Segment;
 import org.elasticsearch.index.mapper.IdFieldMapper;
 import org.elasticsearch.index.mapper.MapperParsingException;
 import org.elasticsearch.index.mapper.ParsedDocument;
-import org.elasticsearch.index.mapper.SeqNoFieldMapper;
 import org.elasticsearch.index.mapper.SourceFieldMapper;
 import org.elasticsearch.index.mapper.SourceToParse;
 import org.elasticsearch.index.mapper.Uid;
-import org.elasticsearch.index.mapper.VersionFieldMapper;
 import org.elasticsearch.index.seqno.ReplicationTracker;
 import org.elasticsearch.index.seqno.RetentionLease;
 import org.elasticsearch.index.seqno.RetentionLeaseSyncer;
@@ -177,6 +175,7 @@ import org.junit.Test;
 import io.crate.Constants;
 import io.crate.common.collections.Tuple;
 import io.crate.common.unit.TimeValue;
+import io.crate.metadata.doc.DocSysColumns;
 
 /**
  * Simple unit-test IndexShard related operations.
@@ -3656,13 +3655,13 @@ public class IndexShardTests extends IndexShardTestCase {
             deleteDoc.getFields().stream().map(IndexableField::name).collect(Collectors.toList()),
             containsInAnyOrder(
                 IdFieldMapper.NAME,
-                VersionFieldMapper.NAME,
-                SeqNoFieldMapper.NAME,
-                SeqNoFieldMapper.NAME,
-                SeqNoFieldMapper.PRIMARY_TERM_NAME,
-                SeqNoFieldMapper.TOMBSTONE_NAME));
+                DocSysColumns.VERSION.name(),
+                DocSysColumns.Names.SEQ_NO,
+                DocSysColumns.Names.SEQ_NO,
+                DocSysColumns.Names.PRIMARY_TERM,
+                DocSysColumns.Names.TOMBSTONE));
         assertThat(deleteDoc.getField(IdFieldMapper.NAME).binaryValue(), equalTo(Uid.encodeId(id)));
-        assertThat(deleteDoc.getField(SeqNoFieldMapper.TOMBSTONE_NAME).numericValue().longValue(), equalTo(1L));
+        assertThat(deleteDoc.getField(DocSysColumns.Names.TOMBSTONE).numericValue().longValue(), equalTo(1L));
 
         updateMappings(shard, IndexMetadata.builder(shard.indexSettings.getIndexMetadata())
             .putMapping("default", "{ \"properties\": {}}").build());
@@ -3672,13 +3671,13 @@ public class IndexShardTests extends IndexShardTestCase {
         assertThat(
             noopDoc.getFields().stream().map(IndexableField::name).collect(Collectors.toList()),
             containsInAnyOrder(
-                VersionFieldMapper.NAME,
+                DocSysColumns.VERSION.name(),
                 SourceFieldMapper.NAME,
-                SeqNoFieldMapper.TOMBSTONE_NAME,
-                SeqNoFieldMapper.NAME,
-                SeqNoFieldMapper.NAME,
-                SeqNoFieldMapper.PRIMARY_TERM_NAME));
-        assertThat(noopDoc.getField(SeqNoFieldMapper.TOMBSTONE_NAME).numericValue().longValue(), equalTo(1L));
+                DocSysColumns.Names.TOMBSTONE,
+                DocSysColumns.Names.SEQ_NO,
+                DocSysColumns.Names.SEQ_NO,
+                DocSysColumns.Names.PRIMARY_TERM));
+        assertThat(noopDoc.getField(DocSysColumns.Names.TOMBSTONE).numericValue().longValue(), equalTo(1L));
         assertThat(noopDoc.getField(SourceFieldMapper.NAME).binaryValue(), equalTo(new BytesRef(reason)));
 
         closeShards(shard);

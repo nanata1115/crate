@@ -479,6 +479,8 @@ def load_tests(loader, suite, ignore):
                             'general/ddl/data-types.rst',
                             'general/ddl/partitioned-tables.rst',
                             'general/builtins/arithmetic.rst',
+                            'general/builtins/bit-operators.rst',
+                            'general/builtins/comparison-operators.rst',
                             'general/builtins/table-functions.rst',
                             'general/builtins/array-comparisons.rst',
                             'general/dql/selects.rst',

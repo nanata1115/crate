@@ -27,6 +27,9 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.NumericDocValuesField;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -36,6 +39,7 @@ import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.mapper.array.DynamicArrayFieldMapperBuilderFactory;
 
 import io.crate.common.collections.Tuple;
+import io.crate.metadata.doc.DocSysColumns;
 
 /** A parser for documents, given mappings from a DocumentMapper */
 final class DocumentParser {
@@ -71,9 +75,17 @@ final class DocumentParser {
             throw new IllegalStateException("found leftover path elements: " + remainingPath);
         }
 
+        Document doc = context.doc();
+        Field version = new NumericDocValuesField(DocSysColumns.VERSION.name(), -1L);
+        doc.add(version);
+
+        SequenceIDFields seqID = SequenceIDFields.emptySeqID();
+        doc.add(seqID.seqNo);
+        doc.add(seqID.seqNoDocValue);
+        doc.add(seqID.primaryTerm);
         return new ParsedDocument(
-            context.version(),
-            context.seqID(),
+            version,
+            seqID,
             context.sourceToParse().id(),
             context.doc(),
             context.sourceToParse().source(),

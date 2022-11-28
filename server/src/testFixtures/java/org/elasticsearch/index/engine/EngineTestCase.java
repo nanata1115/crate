@@ -110,10 +110,9 @@ import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.mapper.Mapping;
 import org.elasticsearch.index.mapper.ParsedDocument;
-import org.elasticsearch.index.mapper.SeqNoFieldMapper;
+import org.elasticsearch.index.mapper.SequenceIDFields;
 import org.elasticsearch.index.mapper.SourceFieldMapper;
 import org.elasticsearch.index.mapper.Uid;
-import org.elasticsearch.index.mapper.VersionFieldMapper;
 import org.elasticsearch.index.seqno.LocalCheckpointTracker;
 import org.elasticsearch.index.seqno.ReplicationTracker;
 import org.elasticsearch.index.seqno.RetentionLeases;
@@ -133,6 +132,7 @@ import org.junit.Before;
 
 import io.crate.common.io.IOUtils;
 import io.crate.common.unit.TimeValue;
+import io.crate.metadata.doc.DocSysColumns;
 
 public abstract class EngineTestCase extends ESTestCase {
 
@@ -348,7 +348,7 @@ public abstract class EngineTestCase extends ESTestCase {
         boolean recoverySource) {
         Field uidField = new Field("_id", Uid.encodeId(id), IdFieldMapper.Defaults.FIELD_TYPE);
         Field versionField = new NumericDocValuesField("_version", 0);
-        SeqNoFieldMapper.SequenceIDFields seqID = SeqNoFieldMapper.SequenceIDFields.emptySeqID();
+        SequenceIDFields seqID = SequenceIDFields.emptySeqID();
         document.add(uidField);
         document.add(versionField);
         document.add(seqID.seqNo);
@@ -374,9 +374,9 @@ public abstract class EngineTestCase extends ESTestCase {
                 final Document doc = new Document();
                 Field uidField = new Field(IdFieldMapper.NAME, Uid.encodeId(id), IdFieldMapper.Defaults.FIELD_TYPE);
                 doc.add(uidField);
-                Field versionField = new NumericDocValuesField(VersionFieldMapper.NAME, 0);
+                Field versionField = new NumericDocValuesField(DocSysColumns.VERSION.name(), 0);
                 doc.add(versionField);
-                SeqNoFieldMapper.SequenceIDFields seqID = SeqNoFieldMapper.SequenceIDFields.emptySeqID();
+                SequenceIDFields seqID = SequenceIDFields.emptySeqID();
                 doc.add(seqID.seqNo);
                 doc.add(seqID.seqNoDocValue);
                 doc.add(seqID.primaryTerm);
@@ -389,13 +389,13 @@ public abstract class EngineTestCase extends ESTestCase {
             @Override
             public ParsedDocument newNoopTombstoneDoc(String reason) {
                 final Document doc = new Document();
-                SeqNoFieldMapper.SequenceIDFields seqID = SeqNoFieldMapper.SequenceIDFields.emptySeqID();
+                SequenceIDFields seqID = SequenceIDFields.emptySeqID();
                 doc.add(seqID.seqNo);
                 doc.add(seqID.seqNoDocValue);
                 doc.add(seqID.primaryTerm);
                 seqID.tombstoneField.setLongValue(1);
                 doc.add(seqID.tombstoneField);
-                Field versionField = new NumericDocValuesField(VersionFieldMapper.NAME, 0);
+                Field versionField = new NumericDocValuesField(DocSysColumns.VERSION.name(), 0);
                 doc.add(versionField);
                 BytesRef byteRef = new BytesRef(reason);
                 doc.add(new StoredField(SourceFieldMapper.NAME, byteRef.bytes, byteRef.offset, byteRef.length));
@@ -1123,9 +1123,9 @@ public abstract class EngineTestCase extends ESTestCase {
             List<DocIdSeqNoAndSource> docs = new ArrayList<>();
             for (LeafReaderContext leafContext : searcher.getIndexReader().leaves()) {
                 LeafReader reader = leafContext.reader();
-                NumericDocValues seqNoDocValues = reader.getNumericDocValues(SeqNoFieldMapper.NAME);
-                NumericDocValues primaryTermDocValues = reader.getNumericDocValues(SeqNoFieldMapper.PRIMARY_TERM_NAME);
-                NumericDocValues versionDocValues = reader.getNumericDocValues(VersionFieldMapper.NAME);
+                NumericDocValues seqNoDocValues = reader.getNumericDocValues(DocSysColumns.Names.SEQ_NO);
+                NumericDocValues primaryTermDocValues = reader.getNumericDocValues(DocSysColumns.Names.PRIMARY_TERM);
+                NumericDocValues versionDocValues = reader.getNumericDocValues(DocSysColumns.VERSION.name());
                 Bits liveDocs = reader.getLiveDocs();
                 for (int i = 0; i < reader.maxDoc(); i++) {
                     if (liveDocs == null || liveDocs.get(i)) {
@@ -1253,8 +1253,8 @@ public abstract class EngineTestCase extends ESTestCase {
         Set<Long> seqNos = new HashSet<>();
         final DirectoryReader wrappedReader = indexSettings.isSoftDeleteEnabled() ? Lucene.wrapAllDocsLive(reader) : reader;
         for (LeafReaderContext leaf : wrappedReader.leaves()) {
-            NumericDocValues primaryTermDocValues = leaf.reader().getNumericDocValues(SeqNoFieldMapper.PRIMARY_TERM_NAME);
-            NumericDocValues seqNoDocValues = leaf.reader().getNumericDocValues(SeqNoFieldMapper.NAME);
+            NumericDocValues primaryTermDocValues = leaf.reader().getNumericDocValues(DocSysColumns.Names.PRIMARY_TERM);
+            NumericDocValues seqNoDocValues = leaf.reader().getNumericDocValues(DocSysColumns.Names.SEQ_NO);
             int docId;
             while ((docId = seqNoDocValues.nextDoc()) != DocIdSetIterator.NO_MORE_DOCS) {
                 assertTrue(seqNoDocValues.advanceExact(docId));
@@ -1317,7 +1317,7 @@ public abstract class EngineTestCase extends ESTestCase {
     static long maxSeqNosInReader(DirectoryReader reader) throws IOException {
         long maxSeqNo = SequenceNumbers.NO_OPS_PERFORMED;
         for (LeafReaderContext leaf : reader.leaves()) {
-            final NumericDocValues seqNoDocValues = leaf.reader().getNumericDocValues(SeqNoFieldMapper.NAME);
+            final NumericDocValues seqNoDocValues = leaf.reader().getNumericDocValues(DocSysColumns.Names.SEQ_NO);
             while (seqNoDocValues.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
                 maxSeqNo = SequenceNumbers.max(maxSeqNo, seqNoDocValues.longValue());
             }
